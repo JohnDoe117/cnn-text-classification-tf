@@ -25,13 +25,48 @@ def clean_str(string):
     return string.strip().lower()
 
 
-def load_data_and_labels(positive_data_file, negative_data_file):
+def load_data_and_labels(all_data_file):
     """
     Loads MR polarity data from files, splits the data into words and generates labels.
     Returns split sentences and labels.
     """
     # Load data from files
-    positive_examples = list(open(positive_data_file, "r").readlines())
+    # What to do if the file is currently being edited by someone. A lock has been set on the file. So keep A backup that is swapped in and out.
+    intent = []
+    all_examples = list(open(all_data_file, "r").readlines())
+    x_text = []
+    for example in all_examples:
+        splitIndex = example.index("-")
+        current_intent = example[0:splitIndex]
+        current_intent_index = intent.index(current_intent) if current_intent in intent else -1
+        if current_intent_index == -1:
+            intent.append(current_intent)
+        x_text.append(example[splitIndex+1:].strip())
+    number_of_intents = len(intent)
+    one_hot_vector = np.ndarray(shape=(number_of_intents,number_of_intents))
+    for encode_column in range(0,number_of_intents):
+        #one_hot_vector_row = []
+        for encode_row in range(0,number_of_intents):
+            if encode_column == encode_row:
+                one_hot_vector[encode_row][encode_column] = 1
+            else:
+                one_hot_vector[encode_row][encode_column] = 0
+        #one_hot_vector.append(one_hot_vector_row)
+    print(one_hot_vector)
+    x_text = [clean_str(sent) for sent in x_text]
+    y = np.ndarray(shape=(len(x_text),number_of_intents))
+    index = 0
+    for example in all_examples:
+        splitIndex = example.index("-")
+        current_intent = example[0:splitIndex]
+        y[index] = one_hot_vector[intent.index(current_intent)]
+        index = index + 1
+    print(type(y))
+    print(y)
+    print(y[0])
+    print(type(y[0]))
+    #quit()
+    '''positive_examples = list(open(positive_data_file, "r").readlines())
     positive_examples = [s.strip() for s in positive_examples]
     negative_examples = list(open(negative_data_file, "r").readlines())
     negative_examples = [s.strip() for s in negative_examples]
@@ -41,9 +76,12 @@ def load_data_and_labels(positive_data_file, negative_data_file):
     # Generate labels
     positive_labels = [[0, 1] for _ in positive_examples]
     negative_labels = [[1, 0] for _ in negative_examples]
-    y = np.concatenate([positive_labels, negative_labels], 0)
-    return [x_text, y]
-
+    y = np.concatenate([positive_labels, negative_labels], 0)'''
+    if len(x_text) == len(y):
+        return [x_text, y]
+    else:
+        print("The length of the training labels and the labels assigned to them do not match")
+        quit();
 
 def batch_iter(data, batch_size, num_epochs, shuffle=True):
     """

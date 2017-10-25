@@ -39,14 +39,13 @@ if FLAGS.eval_train:
     x_raw, y_test = data_helpers.load_data_and_labels(FLAGS.positive_data_file, FLAGS.negative_data_file)
     y_test = np.argmax(y_test, axis=1)
 else:
-    x_raw = ["a masterpiece four years in the making", "everything is off."]
-    y_test = [1, 0]
+    x_raw = ["what full source for", "build status get", "what is the build status", "want the full source", "fhyeb fb hef bhef", "build type", "hey"]
+    y_test = [0, 1, 1, 0, 0, 2, 3]
 
 # Map data into vocabulary
 vocab_path = os.path.join(FLAGS.checkpoint_dir, "..", "vocab")
 vocab_processor = learn.preprocessing.VocabularyProcessor.restore(vocab_path)
 x_test = np.array(list(vocab_processor.transform(x_raw)))
-
 print("\nEvaluating...\n")
 
 # Evaluation
@@ -70,17 +69,42 @@ with graph.as_default():
 
         # Tensors we want to evaluate
         predictions = graph.get_operation_by_name("output/predictions").outputs[0]
-
+        scores = graph.get_operation_by_name("output/scores").outputs[0]
         # Generate batches for one epoch
         batches = data_helpers.batch_iter(list(x_test), FLAGS.batch_size, 1, shuffle=False)
-
+        top_k = 3
+        if(2 < top_k):
+            top_k = 2
+        #softmax = scores
+        softmax = tf.nn.sigmoid(scores, name="softmax")
+        #softmax = tf.nn.softmax(scores, name="softmax") #If you want probabilities instead of activation values that come in the score.
+        #softmax = tf.nn.sigmoid_cross_entropy_with_logits (logits=scores,labels=y_test, name="softmax")
+        print("scores are")
+        print(scores)
+        values, indices = tf.nn.top_k(softmax,sorted=True, k=3)
+        #print(values)
+        print(indices)
+        label = []
+        confidence = []
         # Collect the predictions here
         all_predictions = []
-
+        print(" batch is ")
+        #print(batches[0])
         for x_test_batch in batches:
             batch_predictions = sess.run(predictions, {input_x: x_test_batch, dropout_keep_prob: 1.0})
+            label, confidence = sess.run([indices, values],{input_x: x_test_batch, dropout_keep_prob: 1.0})
+            print("The label ordering in descending order of confidence is - ")
+            print(label)
+            print("The confidence of the test input with each class in descending order is")
+            print(confidence)
+            #print(confidence[0][0] + confidence[0][1])
+            #print(label[])
+            #print("For the batch")
+            #print(x_test_batch)
+            #print(batch_predictions)
             all_predictions = np.concatenate([all_predictions, batch_predictions])
-
+        #print(all_predictions)
+        print("working**************")
 # Print accuracy if y_test is defined
 if y_test is not None:
     correct_predictions = float(sum(all_predictions == y_test))
