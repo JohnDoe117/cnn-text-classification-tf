@@ -6,6 +6,7 @@ This is a modified implementation of CNN Classification in tensorflow that is mo
 
 Thanks to @j314erre for this gist https://gist.github.com/j314erre/b7c97580a660ead82022625ff7a644d8 and @Psycho7 for his Modification https://github.com/dennybritz/cnn-text-classification-tf/issues/17#issuecomment-234845061 to run without hogging up memory.
 
+This code works very well for intent detection purpose too instead of just classification of text into categories.
 ## Requirements
 
 - Python 3.6
